@@ -1,323 +1,150 @@
-#theme_flip_button {
-    cursor: pointer;
-}
+<p align="center"><img src="docs/banner.png" alt="Theme Flip" width="100%"></p>
 
-/* плавный переход между темами */
-::view-transition-old(root),
-::view-transition-new(root) {
-    animation-duration: 0.45s;
-}
+<p align="center">
+  <a href="README.md">English</a> · <b>Русский</b>
+</p>
 
-/* запасной вариант, если View Transitions недоступны */
-html.tf-anim *,
-html.tf-anim *::before,
-html.tf-anim *::after {
-    transition:
-        background-color 0.45s ease,
-        color 0.45s ease,
-        border-color 0.45s ease,
-        fill 0.45s ease,
-        stroke 0.45s ease,
-        box-shadow 0.45s ease,
-        outline-color 0.45s ease !important;
-}
+<p align="center">
+  <img alt="version" src="https://img.shields.io/badge/version-0.6.0-9a8cff">
+  <img alt="SillyTavern" src="https://img.shields.io/badge/SillyTavern-1.19%2B-7fd6c2">
+  <img alt="storage" src="https://img.shields.io/badge/хранение-только%20в%20браузере-ffd37a">
+  <img alt="network" src="https://img.shields.io/badge/сеть-не%20используется-ff7aa8">
+</p>
 
-/* ===== панель настроек: цвета берутся из текущей темы Таверны ===== */
-#theme_flip_settings {
-    --tf-fg: var(--SmartThemeBodyColor, #ddd);
-    --tf-acc: var(--SmartThemeQuoteColor, #e8a);
-    --tf-line: var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.4));
-    --tf-card: color-mix(in srgb, var(--tf-fg) 7%, transparent);
-    --tf-card2: color-mix(in srgb, var(--tf-fg) 14%, transparent);
-}
+# 🌓 Theme Flip
 
-#theme_flip_settings .tf-root {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 6px 2px 4px;
-}
+**Превращает любую тему SillyTavern из тёмной в светлую (и обратно) одним кликом, сохраняя её характер, а потом окрашивает весь интерфейс в любой цвет.**
 
-#theme_flip_settings button {
-    font: inherit;
-    color: inherit;
-    cursor: pointer;
-}
+Выбери тему, которая нравится, нажми кнопку и получи такую же, но светлую (или наоборот). Двинь ползунок, и весь интерфейс уйдёт в зелёный, голубой или персиковый, даже если тема прописывает цвета жёстко в Custom CSS.
 
-/* переключатель Светлая / Тёмная */
-#theme_flip_settings .tf-seg {
-    display: flex;
-    padding: 4px;
-    gap: 4px;
-    background: var(--tf-card);
-    border: 1px solid var(--tf-line);
-    border-radius: 999px;
-}
+---
 
-#theme_flip_settings .tf-segbtn {
-    flex: 1;
-    height: 38px;
-    border: 0;
-    border-radius: 999px;
-    background: none;
-    font-weight: 700;
-    opacity: 0.75;
-    transition: background-color 0.25s, opacity 0.25s;
-}
+## ✨ Возможности
 
-#theme_flip_settings .tf-segbtn.tf-on {
-    background: color-mix(in srgb, var(--tf-acc) 30%, transparent);
-    box-shadow: inset 0 0 0 1px var(--tf-acc);
-    opacity: 1;
-}
+| | |
+|---|---|
+| 🌗 **Тёмная ⇄ светлая** | Один клик в меню волшебной палочки или в панели. Работает в обе стороны и сохраняет оттенок: тёмно-синяя тема становится нежно-голубой. |
+| 🎨 **Тинт** | Шесть цветных кружков или любой свой цвет и ползунок силы. Уводит к этому цвету *всё*, в том числе цвета, которые в исходной теме «застряли» красными или розовыми. |
+| 🎚️ **Тонкая настройка** | Ползунки насыщенности и яркости фона с живым предпросмотром. |
+| 👀 **Превью до / после** | Мини-чат в панели показывает исходные цвета рядом с результатом. Сама панель красится в цвета *твоей текущей* темы. |
+| 💾 **Пресеты** | Сохраняй рецепт (до 30) и применяй в один клик. Пресет весит около 65 байт: хранятся настройки, а не копия темы. |
+| 📤 **Экспорт / импорт** | Делись пресетами в крошечном `.json`-файле. Пресет подходит к любой теме. |
+| ⏰ **Авто-режим** | Следует за системной светлой/тёмной темой или переключается по времени суток. |
+| 🌊 **Плавный переход** | Тема перетекает, а не мигает. |
+| 🌍 **Русский и английский интерфейс** | Язык берётся из настроек SillyTavern. |
+| 🔒 **Ничего не ломает** | Файл темы не меняется. Выключил, и всё как было. Сетевых запросов нет, всё хранится в твоём браузере. |
 
-/* превью до / после */
-#theme_flip_settings .tf-preview {
-    display: flex;
-    height: 148px;
-    border: 1px solid var(--tf-line);
-    border-radius: 18px;
-    overflow: hidden;
-}
+---
 
-#theme_flip_settings .tf-pv {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 10px 12px;
-    background: var(--pv-bg, #222);
-    color: var(--pv-text, #eee);
-    transition: background-color 0.35s, color 0.35s;
-}
+## 📦 Установка
 
-#theme_flip_settings .tf-pvl {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    opacity: 0.6;
-}
+**Через GitHub (удобнее всего)**, когда репозиторий опубликован:
 
-#theme_flip_settings .tf-b {
-    padding: 7px 11px;
-    border-radius: 14px;
-    font-size: 13px;
-    transition: background-color 0.35s, color 0.35s;
-}
+1. В SillyTavern открой **Extensions → Install extension**.
+2. Вставь ссылку на репозиторий и подтверди.
+3. Перезагрузи страницу.
 
-#theme_flip_settings .tf-bu {
-    background: var(--pv-user, #333);
-    color: var(--pv-quote, #e8a);
-}
+**Вручную:**
 
-#theme_flip_settings .tf-bb {
-    background: var(--pv-bot, #2a2a2a);
-    align-self: flex-end;
-}
+1. Скопируй папку `theme-flip` (в ней должны лежать `manifest.json`, `index.js`, `style.css`) в
+   `SillyTavern/data/<твой-пользователь>/extensions/` (обычно `default-user`).
+2. Перезагрузи Таверну с очисткой кэша (**Ctrl+F5**): скрипты расширений кэшируются.
 
-#theme_flip_settings .tf-bb em {
-    color: var(--pv-em, #ccc);
-}
+Что появится:
 
-/* блоки */
-#theme_flip_settings .tf-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
+- пункт **«Светлая / тёмная тема»** в меню волшебной палочки (🪄) рядом с полем ввода;
+- панель **Theme Flip** в настройках **Extensions**.
 
-#theme_flip_settings .tf-h {
-    display: flex;
-    justify-content: space-between;
-    font-weight: 700;
-}
+---
 
-#theme_flip_settings .tf-h span:last-child {
-    opacity: 0.7;
-    font-weight: 600;
-}
+## 🚀 Быстрый старт
 
-#theme_flip_settings .tf-line {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
+1. Нажми **«Светлая / тёмная тема»** в меню палочки, и тема перевернётся.
+2. Открой панель **Theme Flip**. Выбери кружок **тинта**, чтобы уйти всем интерфейсом к цвету.
+3. Подкрути **насыщенность** и **яркость фона**, пока не понравится.
+4. Введи название и нажми **«Сохранить»**: получится пресет.
 
-/* ползунки с цветными дорожками */
-#theme_flip_settings .tf-range {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 12px;
-    margin: 4px 0;
-    border-radius: 6px;
-    border: 1px solid var(--tf-line);
-    outline: none;
-}
+---
 
-#theme_flip_settings .tf-range::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: var(--tf-fg);
-    border: 3px solid var(--SmartThemeBlurTintColor, #222);
-    box-shadow: 0 0 0 1px var(--tf-line), 0 2px 6px rgba(0, 0, 0, 0.35);
-    cursor: pointer;
-}
+## 🧭 Панель по пунктам
 
-#theme_flip_settings .tf-range::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--tf-fg);
-    border: 3px solid var(--SmartThemeBlurTintColor, #222);
-    box-shadow: 0 0 0 1px var(--tf-line);
-    cursor: pointer;
-}
+| Элемент | Что делает |
+|---|---|
+| **Светлая / Тёмная** | Какой вид ты хочешь видеть. Если выбрать вид, противоположный родному виду темы, она перевернётся. |
+| **До / после** | Живое превью на реальных цветах твоей темы. |
+| **Тинт** | Выбери кружок (радужный кружок даёт любой цвет, перечёркнутый выключает тинт). Ползунок задаёт силу: примерно с 35% оттенок полностью следует за тинтом, а дальше цвета становятся насыщеннее. |
+| **Насыщенность** | Делает все цвета приглушённее или ярче. |
+| **Яркость фона** | Сдвигает панели и пузыри сообщений светлее или темнее. |
+| **Авто-режим** | *Вручную*, *Система* (следует за светлой/тёмной темой ОС) или *По времени* (задаёшь, когда начинается и заканчивается «светлая»). Кнопка в меню палочки отключает авто-режим. |
+| **Пресеты** | Сохрани текущий вид, нажми на кружок-пресет, чтобы применить, ✕ удаляет. **Экспорт** скачивает все пресеты, **Импорт** добавляет их из файла. |
+| **Менять тёмная ⇄ светлая** | Сними галочку, чтобы использовать только тинт, насыщенность и яркость, не меняя светлость самой темы. |
+| **Сбросить** | Сбрасывает ползунки и тинт. Сохранённые пресеты остаются. |
 
-#theme_flip_settings .tf-r-hue {
-    background: linear-gradient(90deg, #ff6b6b, #ffd36b, #6bff8e, #6bd3ff, #a36bff, #ff6bd3, #ff6b6b);
-}
+---
 
-#theme_flip_settings .tf-r-sat {
-    background: linear-gradient(90deg, #8a8a8a, var(--tf-acc));
-}
+## 🧪 Пресеты и обмен
 
-#theme_flip_settings .tf-r-bg {
-    background: linear-gradient(90deg, #1c1c1c, #f5f5f5);
-}
+Пресет — это крошечный рецепт. Вот как выглядит экспортированный файл:
 
-#theme_flip_settings .tf-r-tint {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--tf-fg) 18%, transparent), var(--tf-tint, #8ec2f2));
+```json
+{
+  "themeFlip": 1,
+  "presets": [
+    { "n": "Мятная светлая", "m": "l", "t": "#8fe0c4", "a": 80, "s": 100, "b": 0 }
+  ]
 }
+```
 
-/* кружки тинта */
-#theme_flip_settings .tf-sws {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
+| Ключ | Значение |
+|---|---|
+| `n` | название (до 30 символов) |
+| `m` | `"l"` светлая, `"d"` тёмная |
+| `t` | цвет тинта (`""` = без тинта) |
+| `a` | сила тинта, 0–100 |
+| `s` | насыщенность, 30–160 (%) |
+| `b` | яркость фона, от −10 до 6 |
 
-#theme_flip_settings .tf-sw {
-    position: relative;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border-radius: 50%;
-    border: 2px solid var(--tf-line);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background-clip: padding-box;
-}
+Режим хранится как *желаемый вид*, поэтому «светлая с мятным тинтом» даёт светлую мятную тему и из тёмной, и из светлой исходной. Импортируемые файлы проверяются: лишние ключи игнорируются, числа вне допустимого диапазона ограничиваются.
 
-#theme_flip_settings .tf-sw.tf-on {
-    outline: 2px solid var(--tf-fg);
-    outline-offset: 2px;
-}
+---
 
-#theme_flip_settings .tf-off {
-    background: var(--tf-card);
-    opacity: 0.85;
-}
+## ⚙️ Как это работает
 
-#theme_flip_settings .tf-custom {
-    background: conic-gradient(#f66, #fc6, #6f9, #6cf, #96f, #f6c, #f66);
-    overflow: hidden;
-}
+Theme Flip не редактирует твою тему. Он накладывает тонкий слой стилей сверху и снимает его при выключении:
 
-#theme_flip_settings .tf-custom input {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-}
+1. **Переменные темы**: пересчитываются цветовые переменные `--SmartTheme*` из SillyTavern.
+2. **Custom CSS**: цвета, прописанные в Custom CSS темы (hex, rgb, hsl, в том числе собственные переменные и градиенты), читаются и пересчитываются по ролям: фоны, текст, акценты, рамки, тени.
+3. **Содержимое чата**: блоки `<style>` и цвета в `style="..."` внутри сообщений тоже обрабатываются, включая новые сообщения по мере появления.
+4. **Фон страницы**: если нет настоящей фоновой картинки, перекрашивается и страница за полупрозрачными панелями, поэтому панели не становятся серыми.
 
-#theme_flip_settings .tf-colorbtn {
-    width: 52px;
-    height: 30px;
-    padding: 0;
-    border: 1px solid var(--tf-line);
-    border-radius: 8px;
-    background: none;
-    cursor: pointer;
-}
+Цвета сопоставляются с ролями по свойству и яркости, а затем пересчитываются через HSL, чтобы сохранить оттенок. Картинки и графика в `url(...)` не затрагиваются.
 
-/* авто-режим */
-#theme_flip_settings .tf-pills {
-    display: flex;
-    gap: 6px;
-}
+---
 
-#theme_flip_settings .tf-pill {
-    flex: 1;
-    height: 38px;
-    border-radius: 999px;
-    border: 1px solid var(--tf-line);
-    background: none;
-    font-weight: 600;
-}
+## ❓ FAQ и ограничения
 
-#theme_flip_settings .tf-pill.tf-on {
-    background: color-mix(in srgb, var(--tf-acc) 28%, transparent);
-    border-color: var(--tf-acc);
-}
+**Что-то осталось прежнего цвета.** Цвета, «запечённые» в картинки, или заданные там, куда расширение не может заглянуть (например, собственные стили другого расширения), остаются как есть. При включённом **тинте** почти все цвета темы и чата уводятся к нему, так что попробуй увеличить его силу.
 
-/* пресеты */
-#theme_flip_settings .tf-line .text_pole {
-    flex: 1;
-    min-width: 0;
-}
+**Фоновая картинка, которую я поставила, не изменилась.** Так и задумано: настоящие фоновые картинки расширение не трогает.
 
-#theme_flip_settings .tf-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
+**Слишком бледно / слишком ярко.** Используй ползунки насыщенности и фона. Значения по умолчанию лежат в блоке `TUNE` в начале `index.js`.
 
-#theme_flip_settings .tf-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 5px 8px 5px 10px;
-    border: 1px solid var(--tf-line);
-    border-radius: 999px;
-    background: var(--tf-card);
-    cursor: pointer;
-    font-size: 13px;
-    max-width: 100%;
-}
+**Тормозит ли это?** Тема обрабатывается один раз при изменении (и при движении ползунков, с небольшой задержкой). Сообщения чата перепроверяются в фоне с небольшой задержкой.
 
-#theme_flip_settings .tf-chip:hover {
-    background: var(--tf-card2);
-}
+**Где хранятся данные?** В `localStorage` твоего браузера (`themeFlip_settings`, `themeFlip_presets`, `themeFlip_light`). Никуда ничего не отправляется.
 
-#theme_flip_settings .tf-chip span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+**Как удалить полностью?** Удали папку расширения и при желании очисть эти три ключа `localStorage`.
 
-#theme_flip_settings .tf-dot {
-    flex: none;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 1px solid var(--tf-line);
-    background: var(--tf-card2);
-}
+**Отладка.** В консоли браузера: `themeFlip.refresh()` применяет всё заново.
 
-#theme_flip_settings .tf-x {
-    flex: none;
-    opacity: 0.5;
-    font-size: 11px;
-    padding: 0 2px;
-}
+Разработано и проверено на SillyTavern 1.19.0. Плавный переход использует View Transitions API там, где браузер его поддерживает, и обычное затухание в остальных случаях.
 
-#theme_flip_settings .tf-x:hover {
-    opacity: 1;
-}
+---
+
+## 🤝 Помощь проекту
+
+Лучше всего помогают сообщения об ошибках со скриншотом и названием темы. Если какой-то цвет не пересчитался, приложи CSS-правило или HTML сообщения, где он задан.
+
+## 📄 Лицензия
+
+Выбери и добавь файл лицензии (например, MIT) перед публикацией.
