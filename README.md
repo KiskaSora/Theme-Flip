@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-0.6.0-9a8cff">
+  <img alt="version" src="https://img.shields.io/badge/version-0.7.0-9a8cff">
   <img alt="SillyTavern" src="https://img.shields.io/badge/SillyTavern-1.19%2B-7fd6c2">
   <img alt="storage" src="https://img.shields.io/badge/storage-browser%20only-ffd37a">
   <img alt="network" src="https://img.shields.io/badge/network-none-ff7aa8">
@@ -129,7 +129,7 @@ Colors are matched to roles by property and brightness, then mapped with HSL mat
 
 **The look is too pale / too strong.** Use the saturation and background sliders. Defaults live in the `TUNE` block at the top of `index.js`.
 
-**Does it slow things down?** The theme is processed once when something changes (and on slider movement with a short delay). Chat messages are re-checked in the background with a small delay.
+**Does it slow things down?** The theme is processed once when something changes. Chat content is handled incrementally: only *new* messages are looked at (at most every 250 ms), already-checked elements are never re-read, and while you drag a slider the chat is updated only after you stop. If you still notice lag in a very long chat, untick **Recolor chat content** in the panel — the theme and Custom CSS keep working, only colors written directly inside messages are left alone.
 
 **Where is my data stored?** In your browser's `localStorage` (`themeFlip_settings`, `themeFlip_presets`, `themeFlip_light`). Nothing is sent anywhere.
 

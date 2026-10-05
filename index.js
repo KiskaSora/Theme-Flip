@@ -1,5 +1,5 @@
 /*
- * Theme Flip v0.6
+ * Theme Flip v0.7
  * Кнопка в меню волшебной палочки + панель в настройках расширений.
  *
  *  • тёмная ⇄ светлая с сохранением оттенка (в обе стороны)
@@ -29,6 +29,7 @@
             light: 'Светлая', dark: 'Тёмная', tint: 'Тинт', noTint: 'Без тинта', customColor: 'Свой цвет',
             sat: 'Насыщенность', bg: 'Яркость фона', auto: 'Авто-режим', manual: 'Вручную',
             system: 'Система', time: 'По времени', lightFromTo: 'Светлая с / до',
+            chat: 'Перекрашивать содержимое чата', chatHint: 'Отключи, если в очень длинных чатах заметны лаги',
             presets: 'Пресеты', name: 'Название', save: 'Сохранить', export: 'Экспорт', import: 'Импорт',
             invert: 'Менять тёмная ⇄ светлая', reset: 'Сбросить', presetN: 'Пресет ',
             maxPresets: n => `Максимум ${n} пресетов — удали лишние`,
@@ -43,6 +44,7 @@
             light: 'Light', dark: 'Dark', tint: 'Tint', noTint: 'No tint', customColor: 'Custom color',
             sat: 'Saturation', bg: 'Background brightness', auto: 'Auto mode', manual: 'Manual',
             system: 'System', time: 'By time', lightFromTo: 'Light from / to',
+            chat: 'Recolor chat content', chatHint: 'Turn off if you notice lag in very long chats',
             presets: 'Presets', name: 'Name', save: 'Save', export: 'Export', import: 'Import',
             invert: 'Switch dark ⇄ light', reset: 'Reset', presetN: 'Preset ',
             maxPresets: n => `Limit of ${n} presets reached — delete some`,
@@ -64,6 +66,7 @@
     const CHAT_STYLE_ID = 'theme-flip-chat-style';
 
     const DEFAULTS = {
+        chat: true,       // перекрашивать содержимое чата (style / inline-цвета в сообщениях)
         invert: true,     // менять светлая ⇄ тёмная (иначе только перекраска)
         sat: 100,         // насыщенность, %
         bgShift: 0,       // сдвиг яркости фона
@@ -131,6 +134,7 @@
     let ctx = { src: 'dark', target: 'light', S: null };
     let fullTimer = null, chatTimer = null, liveTimer = null, autoTimer = null;
     let lastChatCss = null;
+    let chatPrimed = false;               // чат уже просканирован целиком
     let mq = null;
 
     function loadSettings() {
@@ -392,50 +396,131 @@
         document.head.appendChild(el); // всегда последним, чтобы перебивать остальные
     }
 
-    function restoreInline() {
-        document.querySelectorAll('[data-tf-orig]').forEach(el => {
-            el.setAttribute('style', el.dataset.tfOrig);
-            delete el.dataset.tfOrig;
-        });
-    }
-
     function removeAll() {
         document.getElementById(STYLE_ID)?.remove();
-        document.getElementById(CHAT_STYLE_ID)?.remove();
-        lastChatCss = null;
-        restoreInline();
+        removeChat();
         active = false;
     }
 
-    // <style> и inline-стили внутри сообщений
-    function applyChat() {
-        if (!active) return;
+    // ====== чат: <style> и inline-цвета в сообщениях ======
+    // Работаем инкрементально: обрабатываем только новые узлы, а не весь чат,
+    // и не чаще раза в 250 мс. Уже просмотренные элементы повторно не читаются.
+    let ctxVer = 0;                       // растёт при каждом пересчёте палитры
+    let seen = new WeakSet();             // inline-элементы, которые уже просмотрены
+    const colored = new Set();            // элементы, у которых мы подменили inline-цвета
+    const styleCache = new WeakMap();     // <style> в чате -> { ver, css }
+    const pendingNodes = new Set();
+    let pendingFull = false, styleDirty = false, reconvert = false;
+
+    function inlineOne(el) {
+        const hadOrig = el.dataset.tfOrig !== undefined;
+        const orig = hadOrig ? el.dataset.tfOrig : el.getAttribute('style');
+        if (!orig) return;
+        if (hadOrig) el.setAttribute('style', orig);   // пересчёт — начинаем с оригинала
+        const st = el.style;
+        const patches = [];
+        for (let i = 0; i < st.length; i++) {
+            const prop = st[i];
+            const out = convertValue(prop, st.getPropertyValue(prop));
+            if (out) patches.push([prop, out]);
+        }
+        if (patches.length) {
+            el.dataset.tfOrig = orig;
+            patches.forEach(([p, v]) => el.style.setProperty(p, v, 'important'));
+            colored.add(el);
+        } else {
+            delete el.dataset.tfOrig;
+            colored.delete(el);
+        }
+    }
+
+    function scanNode(n) {
+        const visit = el => {
+            if (el.tagName === 'STYLE') { styleDirty = true; return; }
+            if (seen.has(el)) return;
+            seen.add(el);
+            inlineOne(el);
+        };
+        if (n.matches && n.matches('style,[style]')) visit(n);
+        if (n.querySelectorAll) n.querySelectorAll('style,[style]').forEach(visit);
+    }
+
+    function rebuildChatStyles() {
         const chat = document.getElementById('chat');
         if (!chat) return;
-
         let css = '';
         chat.querySelectorAll('style').forEach(st => {
-            if (st.sheet) css += sheetToCss(st.sheet) + '\n';
+            let c = styleCache.get(st);
+            if (!c || c.ver !== ctxVer) {
+                c = { ver: ctxVer, css: st.sheet ? sheetToCss(st.sheet) : '' };
+                styleCache.set(st, c);
+            }
+            css += c.css + '\n';
         });
         if (css !== lastChatCss) {
             lastChatCss = css;
             setStyle(CHAT_STYLE_ID, css.trim());
         }
+    }
 
-        chat.querySelectorAll('[style]').forEach(el => {
-            const orig = el.dataset.tfOrig ?? el.getAttribute('style');
-            if (el.dataset.tfOrig === undefined) el.dataset.tfOrig = orig;
-            el.setAttribute('style', orig);
-            const st = el.style;
-            const patches = [];
-            for (let i = 0; i < st.length; i++) {
-                const prop = st[i];
-                const out = convertValue(prop, st.getPropertyValue(prop));
-                if (out) patches.push([prop, out]);
+    function chatWork() {
+        if (!active || !settings.chat) { pendingNodes.clear(); pendingFull = false; return; }
+        const chat = document.getElementById('chat');
+        if (!chat) return;
+        if (pendingFull) {
+            pendingFull = false; reconvert = false; chatPrimed = true;
+            pendingNodes.clear();
+            scanNode(chat);
+            styleDirty = true;
+        } else {
+            for (const n of pendingNodes) if (n.isConnected) scanNode(n);
+            pendingNodes.clear();
+        }
+        if (reconvert) {
+            reconvert = false;
+            for (const el of [...colored]) {
+                if (!el.isConnected) colored.delete(el); else inlineOne(el);
             }
-            patches.forEach(([p, v]) => el.style.setProperty(p, v, 'important'));
-            if (!patches.length) delete el.dataset.tfOrig;
-        });
+        }
+        if (styleDirty) { styleDirty = false; rebuildChatStyles(); }
+    }
+
+    // delay — не чаще раза в delay мс; trailing=true — ждать паузы (для ползунков)
+    function scheduleChatWork(delay = 250, trailing = false) {
+        if (chatTimer) { if (!trailing) return; clearTimeout(chatTimer); }
+        chatTimer = setTimeout(() => { chatTimer = null; chatWork(); }, delay);
+    }
+
+    function onChatMutations(records) {
+        if (!active || !settings.chat) return;
+        for (const r of records) {
+            for (const n of r.addedNodes) if (n.nodeType === 1) pendingNodes.add(n);
+            for (const n of r.removedNodes) {
+                if (n.nodeType === 1 && (n.tagName === 'STYLE' || (n.querySelector && n.querySelector('style')))) {
+                    styleDirty = true;
+                }
+            }
+        }
+        if (pendingNodes.size > 300) { pendingNodes.clear(); pendingFull = true; }
+        scheduleChatWork(250);
+    }
+
+    function removeChat() {
+        clearTimeout(chatTimer);
+        chatTimer = null;
+        pendingNodes.clear();
+        pendingFull = false; styleDirty = false; reconvert = false;
+        document.getElementById(CHAT_STYLE_ID)?.remove();
+        lastChatCss = null;
+        for (const el of colored) {
+            if (el.dataset.tfOrig !== undefined) {
+                el.setAttribute('style', el.dataset.tfOrig);
+                delete el.dataset.tfOrig;
+            }
+        }
+        colored.clear();
+        seen = new WeakSet();
+        chatPrimed = false;
     }
 
     // ====== фон страницы ======
@@ -550,7 +635,7 @@
     }
 
     // ====== применение ======
-    function doApply() {
+    function doApply(o = {}) {
         // сначала убираем свой слой, чтобы прочитать оригинальные значения темы
         document.getElementById(STYLE_ID)?.remove();
         const cs = getComputedStyle(document.documentElement);
@@ -593,9 +678,12 @@
         setStyle(STYLE_ID, css);
         active = true;
 
-        // 4) сообщения чата
-        lastChatCss = null;
-        applyChat();
+        // 4) сообщения чата (при движении ползунка — отложенно и не чаще раза в 250 мс)
+        ctxVer++;
+        if (!settings.chat) removeChat();
+        else if (!chatPrimed) pendingFull = true;
+        else { reconvert = true; styleDirty = true; }
+        if (settings.chat) { if (o.live) scheduleChatWork(400, true); else chatWork(); }
         updateUi();
     }
 
@@ -612,13 +700,14 @@
         setTimeout(() => root.classList.remove('tf-anim'), 700);
     }
 
-    function refresh({ animate = false } = {}) {
-        if (animate) transition(doApply); else doApply();
+    function refresh({ animate = false, live = false } = {}) {
+        const run = () => doApply({ live });
+        if (animate) transition(run); else run();
     }
 
     function refreshLive() {      // для ползунков: без анимации, с задержкой
         clearTimeout(liveTimer);
-        liveTimer = setTimeout(() => refresh({ animate: false }), 100);
+        liveTimer = setTimeout(() => refresh({ animate: false, live: true }), 100);
     }
 
     // ====== кнопка и панель ======
@@ -684,6 +773,7 @@
     function syncPanel() {
         if (!$('theme_flip_settings')) return;
         $('tf_invert').checked = !!settings.invert;
+        $('tf_chat').checked = settings.chat !== false;
         $('tf_sat').value = settings.sat;
         $('tf_sat_v').textContent = settings.sat + '%';
         $('tf_bg').value = settings.bgShift;
@@ -759,6 +849,10 @@
       <div class="tf-line" id="tf_time_row"><span>${t('lightFromTo')}</span><input type="time" id="tf_from" class="text_pole"><input type="time" id="tf_to" class="text_pole"></div>
     </div>
 
+    <div class="tf-group tf-line">
+      <label class="checkbox_label" title="${t('chatHint')}"><input type="checkbox" id="tf_chat"><span>${t('chat')}</span></label>
+    </div>
+
     <div class="tf-group">
       <div class="tf-h"><span>${t('presets')}</span><span id="tf_pr_count"></span></div>
       <div class="tf-line"><input type="text" id="tf_pr_name" class="text_pole" maxlength="30" placeholder="${t('name')}"><div id="tf_pr_save" class="menu_button">${t('save')}</div></div>
@@ -778,6 +872,12 @@
 
         $('tf_mode_light').addEventListener('click', () => setPolarity('light'));
         $('tf_mode_dark').addEventListener('click', () => setPolarity('dark'));
+        $('tf_chat').addEventListener('change', e => {
+            settings.chat = e.target.checked;
+            saveSettings();
+            if (!settings.chat) removeChat();
+            else if (active) { pendingFull = true; chatWork(); }
+        });
         $('tf_invert').addEventListener('change', e => { settings.invert = e.target.checked; changed(true); });
 
         $('tf_sws').addEventListener('click', e => {
@@ -991,13 +1091,7 @@
     // ====== слежение: смена темы, правка Custom CSS, новые сообщения ======
     function scheduleFull() {
         clearTimeout(fullTimer);
-        fullTimer = setTimeout(doApply, 200);
-    }
-
-    function scheduleChat() {
-        if (!active) return;
-        clearTimeout(chatTimer);
-        chatTimer = setTimeout(applyChat, 500);
+        fullTimer = setTimeout(() => doApply(), 200);
     }
 
     function watch() {
@@ -1019,7 +1113,7 @@
         // новые сообщения / смена чата
         const chat = document.getElementById('chat');
         if (chat) {
-            new MutationObserver(scheduleChat).observe(chat, { childList: true, subtree: true });
+            new MutationObserver(onChatMutations).observe(chat, { childList: true, subtree: true });
         }
     }
 
@@ -1037,5 +1131,5 @@
     }, 500);
 
     // для отладки из консоли браузера
-    window.themeFlip = { refresh, TUNE, get settings() { return settings; }, importText, loadPresets };
+    window.themeFlip = { refresh, TUNE, get settings() { return settings; }, importText, loadPresets, chatStats: () => ({ colored: colored.size, queued: pendingNodes.size }) };
 })();
